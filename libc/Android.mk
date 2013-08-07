@@ -443,6 +443,19 @@ $(if $(filter true,$(_LIBC_ARCH_CPU_VARIANT_HAS_$(1))), \
 )
 endef
 
+define libc-remove-cpu-variant-src
+$(if $(filter true,$(_LIBC_ARCH_CPU_VARIANT_HAS_$(1))), \
+     $(eval _LIBC_ARCH_CPU_VARIANT_HAS_$(1) := false) \
+     $(eval _LIBC_ARCH_CPU_VARIANT_SRC_FILE.$(1) := ) \
+     $(eval _LIBC_ARCH_CPU_VARIANT_SRC_FILES := $(filter-out $(2),$(_LIBC_ARCH_CPU_VARIANT_SRC_FILES))) \
+  , \
+)
+endef
+
+define libc-remove-common-src
+$(eval libc_common_src_files := $(filter-out $(1),$(libc_common_src_files)))
+endef
+
 _LIBC_ARCH_COMMON_SRC_FILES :=
 _LIBC_ARCH_CPU_VARIANT_SRC_FILES :=
 _LIBC_ARCH_STATIC_SRC_FILES :=
