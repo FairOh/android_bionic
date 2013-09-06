@@ -164,4 +164,74 @@ LOCAL_SRC_FILES := $(test_src_files) $(test_dynamic_src_files)
 include $(BUILD_HOST_NATIVE_TEST)
 endif
 
+# -----------------------------------------------------------------------------
+# Unit tests run on host with bionic .so
+# -----------------------------------------------------------------------------
+
+# We can use the same binaries as for device, but need to do some extra setup:
+#  1. We need linker as well as all library deps.
+#  2. Need /system/bin writable location on host since all Android executables
+#  are looking for linker over there.
+#  3. Need EXTERNAL_STORAGE as temporary location
+# Note: tests which are testing Android specifics (e.g. properties) will fail.
+ifeq ($(HOST_OS)-$(HOST_ARCH),linux-x86)
+linker_name=linker
+
+bionic-unit-tests-run-on-host: bionic-unit-tests $(linker_name)
+	cp $(TARGET_OUT_EXECUTABLES)/$(linker_name) /system/bin
+	LD_LIBRARY_PATH=$(TARGET_OUT_SHARED_LIBRARIES) EXTERNAL_STORAGE=/tmp \
+          $(TARGET_OUT_DATA_NATIVE_TESTS)/bionic-unit-tests/bionic-unit-tests
+endif
+
+# -----------------------------------------------------------------------------
+# FORTIFY_SOURCE tests
+# -----------------------------------------------------------------------------
+
+fortify_c_includes = \
+    bionic \
+    bionic/libstdc++/include \
+    external/stlport/stlport \
+    external/gtest/include
+fortify_test_files = fortify_test.cpp
+
+# -Wno-error=unused-parameter needed as
+# external/stlport/stlport/stl/_threads.c (included from
+# external/gtest/include/gtest/gtest.h) does not compile cleanly under
+# clang. TODO: fix this.
+fortify_c_flags = $(test_c_flags) -Wno-error=unused-parameter
+
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES := $(fortify_test_files)
+LOCAL_MODULE := fortify1-tests-gcc
+LOCAL_CFLAGS += $(fortify_c_flags) -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=1 -DTEST_NAME=Fortify1_Gcc
+LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
+LOCAL_C_INCLUDES += $(fortify_c_includes)
+include $(BUILD_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES := $(fortify_test_files)
+LOCAL_MODULE := fortify2-tests-gcc
+LOCAL_CFLAGS += $(fortify_c_flags) -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -DTEST_NAME=Fortify2_Gcc
+LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
+LOCAL_C_INCLUDES += $(fortify_c_includes)
+include $(BUILD_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES := $(fortify_test_files)
+LOCAL_MODULE := fortify1-tests-clang
+LOCAL_CLANG := true
+LOCAL_CFLAGS += $(fortify_c_flags) -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=1 -DTEST_NAME=Fortify1_Clang
+LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
+LOCAL_C_INCLUDES += $(fortify_c_includes)
+include $(BUILD_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES := $(fortify_test_files)
+LOCAL_MODULE := fortify2-tests-clang
+LOCAL_CLANG := true
+LOCAL_CFLAGS += $(fortify_c_flags) -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -DTEST_NAME=Fortify2_Clang
+LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
+LOCAL_C_INCLUDES += $(fortify_c_includes)
+include $(BUILD_STATIC_LIBRARY)
+
 endif # !BUILD_TINY_ANDROID
