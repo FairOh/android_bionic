@@ -166,22 +166,24 @@ include $(BUILD_HOST_NATIVE_TEST)
 endif
 
 # -----------------------------------------------------------------------------
-# Unit tests run on host with bionic .so
+# Run the unit tests built against x86 bionic on an x86 host.
 # -----------------------------------------------------------------------------
 
-# We can use the same binaries as for device, but need to do some extra setup:
-#  1. We need linker as well as all library deps.
-#  2. Need /system/bin writable location on host since all Android executables
-#  are looking for linker over there.
-#  3. Need EXTERNAL_STORAGE as temporary location
-# Note: tests which are testing Android specifics (e.g. properties) will fail.
 ifeq ($(HOST_OS)-$(HOST_ARCH),linux-x86)
-linker_name=linker
-
-bionic-unit-tests-run-on-host: bionic-unit-tests $(linker_name)
-	cp $(TARGET_OUT_EXECUTABLES)/$(linker_name) /system/bin
-	LD_LIBRARY_PATH=$(TARGET_OUT_SHARED_LIBRARIES) EXTERNAL_STORAGE=/tmp \
-          $(TARGET_OUT_DATA_NATIVE_TESTS)/bionic-unit-tests/bionic-unit-tests
+ifeq ($(TARGET_ARCH),x86)
+# gtest needs EXTERNAL_STORAGE for death test output.
+# bionic itself should always work relative to ANDROID_DATA or ANDROID_ROOT.
+# We create /data/local/tmp to be as much like the regular target environment
+# as possible.
+bionic-unit-tests-run-on-host: bionic-unit-tests $(TARGET_OUT_EXECUTABLES)/linker
+	mkdir -p $(TARGET_OUT_DATA)/local/tmp
+	cp $(TARGET_OUT_EXECUTABLES)/linker /system/bin
+	ANDROID_DATA=$(TARGET_OUT_DATA) \
+	ANDROID_ROOT=$(TARGET_OUT) \
+	EXTERNAL_STORAGE=$(TARGET_OUT_DATA)/local/tmp \
+	LD_LIBRARY_PATH=$(TARGET_OUT_SHARED_LIBRARIES) \
+		$(TARGET_OUT_DATA_NATIVE_TESTS)/bionic-unit-tests/bionic-unit-tests
+endif
 endif
 
 # -----------------------------------------------------------------------------
