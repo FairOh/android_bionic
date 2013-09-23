@@ -473,7 +473,6 @@ libc_common_cflags := \
     -DWITH_ERRLIST \
     -DANDROID_CHANGES \
     -D_LIBC=1 \
-    -DFLOATING_POINT \
     -DINET6 \
     -I$(LOCAL_PATH)/private \
     -DPOSIX_MISTAKE \

@@ -90,3 +90,5 @@ extern void __atexit_register_cleanup(void (*)(void));
 
 #define FLOCKFILE(fp)   do { if (__isthreaded) flockfile(fp); } while (0)
 #define FUNLOCKFILE(fp) do { if (__isthreaded) funlockfile(fp); } while (0)
+
+#define FLOATING_POINT
